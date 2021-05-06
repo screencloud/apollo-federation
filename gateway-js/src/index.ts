@@ -40,7 +40,11 @@ import { getVariableValues } from 'graphql/execution/values';
 import fetcher from 'make-fetch-happen';
 import { HttpRequestCache } from './cache';
 import { fetch } from 'apollo-server-env';
-import { QueryPlanner, QueryPlan, prettyFormatQueryPlan } from '@apollo/query-planner';
+import {
+  QueryPlanner,
+  QueryPlan,
+  prettyFormatQueryPlan,
+} from '@apollo/query-planner';
 import {
   ServiceEndpointDefinition,
   Experimental_DidFailCompositionCallback,
@@ -110,12 +114,12 @@ export function getDefaultFetcher() {
 /**
  * TODO(trevor:cloudconfig): Stop exporting this
  * @deprecated This will be removed in a future version of @apollo/gateway
-*/
+ */
 export const getDefaultGcsFetcher = getDefaultFetcher;
 /**
  * TODO(trevor:cloudconfig): Stop exporting this
  * @deprecated This will be removed in a future version of @apollo/gateway
-*/
+ */
 export const GCS_RETRY_COUNT = 5;
 
 export const HEALTH_CHECK_QUERY =
@@ -125,7 +129,7 @@ export const SERVICE_DEFINITION_QUERY =
 
 type GatewayState =
   | { phase: 'initialized' }
-  | { phase: 'failed to load'}
+  | { phase: 'failed to load' }
   | { phase: 'loaded' }
   | { phase: 'stopping'; stoppingDonePromise: Promise<void> }
   | { phase: 'stopped' }
@@ -135,6 +139,7 @@ type GatewayState =
       doneWaiting: () => void;
     }
   | { phase: 'polling'; pollingDonePromise: Promise<void> };
+
 export class ApolloGateway implements GraphQLService {
   public schema?: GraphQLSchema;
   private serviceMap: DataSourceMap = Object.create(null);
@@ -142,7 +147,9 @@ export class ApolloGateway implements GraphQLService {
   private logger: Logger;
   private queryPlanStore: InMemoryLRUCache<QueryPlan>;
   private apolloConfig?: ApolloConfig;
-  private onSchemaChangeListeners = new Set<(schema: GraphQLSchema, supergraphSdl: string) => void>();
+  private onSchemaChangeListeners = new Set<
+    (schema: GraphQLSchema, supergraphSdl: string) => void
+  >();
   private serviceDefinitions: ServiceDefinition[] = [];
   private compositionMetadata?: CompositionMetadata;
   private serviceSdlCache = new Map<string, string>();
@@ -491,7 +498,9 @@ export class ApolloGateway implements GraphQLService {
     }
   }
 
-  private async updateWithSupergraphSdl(result: SupergraphSdlUpdate): Promise<void> {
+  private async updateWithSupergraphSdl(
+    result: SupergraphSdlUpdate,
+  ): Promise<void> {
     if (result.id === this.compositionId) {
       this.logger.debug('No change in composition since last check.');
       return;
@@ -519,7 +528,9 @@ export class ApolloGateway implements GraphQLService {
 
     if (this.queryPlanStore) this.queryPlanStore.flush();
 
-    const { schema, supergraphSdl } = this.createSchemaFromSupergraphSdl(result.supergraphSdl);
+    const { schema, supergraphSdl } = this.createSchemaFromSupergraphSdl(
+      result.supergraphSdl,
+    );
 
     if (!supergraphSdl) {
       this.logger.error(
@@ -547,18 +558,21 @@ export class ApolloGateway implements GraphQLService {
     }
   }
 
-  private updateWithSchemaAndNotify(schema: GraphQLSchema, supergraphSdl: string): void {
+  private updateWithSchemaAndNotify(
+    schema: GraphQLSchema,
+    supergraphSdl: string,
+  ): void {
     this.schema = schema;
     this.queryPlanner = new QueryPlanner(schema);
 
     // Notify the schema listeners of the updated schema
     try {
       this.onSchemaChangeListeners.forEach((listener) =>
-          listener(schema, supergraphSdl),
+        listener(schema, supergraphSdl),
       );
     } catch (e) {
       this.logger.error(
-          "An error was thrown from an 'onSchemaChange' listener. " +
+        "An error was thrown from an 'onSchemaChange' listener. " +
           'The schema will still update: ' +
           ((e && e.message) || e),
       );
@@ -672,7 +686,9 @@ export class ApolloGateway implements GraphQLService {
     }
   }
 
-  private serviceListFromSupergraphSdl(supergraphSdl: DocumentNode): Omit<ServiceDefinition, 'typeDefs'>[] {
+  private serviceListFromSupergraphSdl(
+    supergraphSdl: DocumentNode,
+  ): Omit<ServiceDefinition, 'typeDefs'>[] {
     const schema = buildComposedSchema(supergraphSdl);
     return this.serviceListFromComposedSchema(schema);
   }
@@ -702,7 +718,9 @@ export class ApolloGateway implements GraphQLService {
     };
   }
 
-  public onSchemaChange(callback: (schema: GraphQLSchema, supergraphSdl: string) => void): Unsubscriber {
+  public onSchemaChange(
+    callback: (schema: GraphQLSchema, supergraphSdl: string) => void,
+  ): Unsubscriber {
     this.onSchemaChangeListeners.add(callback);
 
     return () => {
