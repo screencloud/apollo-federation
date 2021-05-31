@@ -317,6 +317,14 @@ async function executeFetch<TContext>(
       traceNode.sentTime = dateToProtoTimestamp(new Date());
     }
 
+    const contextHeaders = context.requestContext.request.http?.headers
+    if (contextHeaders) {
+      const authHeader = contextHeaders.get('Authorization')
+      if (authHeader) {
+        http.headers.set('Authorization', authHeader)
+      }
+    }
+
     const response = await service.process({
       request: {
         query: source,
